@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@pythnetwork/pyth-sdk-solidity/IPyth.sol";
 import "@pythnetwork/pyth-sdk-solidity/PythStructs.sol";
+import "hardhat/console.sol";
 
 contract AnchorUSD is ERC20, Ownable(msg.sender) {
-    IPyth pyth;
+    //Pyth Network contract address for chain
+    IPyth public pyth;
 
     constructor(address pythContract) ERC20("Anchor USD", "AUSD") {
         pyth = IPyth(pythContract);
@@ -31,14 +33,15 @@ contract AnchorUSD is ERC20, Ownable(msg.sender) {
         PythStructs.Price memory currentPrice = pyth.getPrice(priceId);
 
         uint256 price = convertToUint(currentPrice, 18);
+        console.log(price);
+        console.log((price * (msg.value - fee)));
 
-        
         require(
             _AUSD <= 100 ether,
             "Anchor V1: Loan value must be 100 AUSD or higher."
         );
         require(
-            (_AUSD * 1000) / (msg.value * 1000) >= 1100,
+            (_AUSD * 10**3) / ((price * (msg.value - fee)) / 10**15) >= 1100,
             "Anchor V1: Collateral ratio is not sufficient."
         );
         loans[msg.sender] = (Loan(_AUSD, msg.value));
