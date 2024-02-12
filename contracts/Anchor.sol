@@ -33,18 +33,16 @@ contract AnchorUSD is ERC20, Ownable(msg.sender) {
         PythStructs.Price memory currentPrice = pyth.getPrice(priceId);
 
         uint256 price = convertToUint(currentPrice, 18);
-        console.log(price);
-        console.log((price * (msg.value - fee)));
 
         require(
-            _AUSD <= 100 ether,
-            "Anchor V1: Loan value must be 100 AUSD or higher."
+            _AUSD >= 1000000000000000000,
+            "Anchor V1: Loan value must be 1 AUSD or higher."
         );
         require(
-            (_AUSD * 10**3) / ((price * (msg.value - fee)) / 10**15) >= 1100,
+            (((price * (msg.value - fee)) / 10**18) * 10**3) / (_AUSD) >= 1100,
             "Anchor V1: Collateral ratio is not sufficient."
         );
-        loans[msg.sender] = (Loan(_AUSD, msg.value));
+        loans[msg.sender] = (Loan(_AUSD, msg.value - fee));
         _mint(msg.sender, _AUSD);
     }
 
@@ -70,11 +68,6 @@ contract AnchorUSD is ERC20, Ownable(msg.sender) {
     function liquidateLoan() public {}
 
     function redeemEther(uint256 _AUSD) public {}
-
-    function getFantomPrice(bytes[] calldata priceUpdateData) public payable {
-        uint fee = pyth.getUpdateFee(priceUpdateData);
-        pyth.updatePriceFeeds{value: fee}(priceUpdateData);
-    }
     
     function convertToUint(
         PythStructs.Price memory price,
